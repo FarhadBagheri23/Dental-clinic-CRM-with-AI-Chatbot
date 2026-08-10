@@ -1,6 +1,6 @@
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
-from .config import settings
+from app.core.config import settings
 
 client = AsyncIOMotorClient(
     settings.mongo_url,
@@ -11,3 +11,7 @@ client = AsyncIOMotorClient(
 
 def get_db() -> AsyncIOMotorDatabase:
     return client[settings.mongo_db]
+
+
+def close_db() -> None:
+    client.close()

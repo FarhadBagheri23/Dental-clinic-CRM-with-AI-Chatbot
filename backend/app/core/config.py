@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     rather than fall back to an insecure value.
     """
 
+    project_name: str = "Dental Clinic BI API"
+    api_prefix: str = "/api"
+
     mongo_url: str
     mongo_db: str = "dental_clinic"
 

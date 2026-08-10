@@ -1,10 +1,17 @@
+"""Shared FastAPI dependencies.
+
+Endpoints annotate parameters with the aliases below rather than calling
+Depends() inline, so a change to how the database or the current user is
+resolved happens in one place.
+"""
+
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from .db import get_db
-from .security import read_token
+from app.core.security import read_token
+from app.db.mongodb import get_db
 
 SESSION_COOKIE = "clinic_session"
 

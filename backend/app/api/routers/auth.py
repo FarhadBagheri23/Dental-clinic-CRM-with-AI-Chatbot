@@ -1,23 +1,12 @@
 from fastapi import APIRouter, HTTPException, Response, status
-from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
-from ..config import settings
-from ..deps import SESSION_COOKIE, CurrentUser, Database
-from ..security import DUMMY_HASH, create_token, verify_password
+from app.api.deps import SESSION_COOKIE, CurrentUser, Database
+from app.core.config import settings
+from app.core.security import DUMMY_HASH, create_token, verify_password
+from app.schemas.auth import LoginRequest, UserOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-class LoginRequest(BaseModel):
-    username: str = Field(min_length=1, max_length=64)
-    password: str = Field(min_length=1, max_length=256)
-
-
-class UserOut(BaseModel):
-    username: str
-    name: str
-    role: str
 
 
 def _set_session_cookie(response: Response, token: str) -> None:

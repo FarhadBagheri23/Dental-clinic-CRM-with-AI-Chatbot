@@ -13,11 +13,11 @@ import jwt
 import pytest
 from fastapi.testclient import TestClient
 
-from app.config import settings
-from app.db import get_db
-from app.deps import SESSION_COOKIE
+from app.core.config import settings
+from app.db.mongodb import get_db
+from app.api.deps import SESSION_COOKIE
 from app.main import app
-from app.security import DUMMY_HASH, create_token, read_token, verify_password
+from app.core.security import DUMMY_HASH, create_token, read_token, verify_password
 
 PASSWORD = "s3cret-پسورد"
 

@@ -11,7 +11,7 @@ import time
 
 import jwt
 
-from .config import settings
+from app.core.config import settings
 
 # Verified in place of a real hash when the username does not exist, so a
 # missing user costs roughly the same time as a wrong password — otherwise
