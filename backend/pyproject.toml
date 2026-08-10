@@ -1,0 +1,18 @@
+[project]
+name = "dental-clinic-api"
+version = "1.0.0"
+description = "FastAPI backend for the dental clinic BI system"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "motor>=3.6",
+    "pydantic-settings>=2.6",
+    "pyjwt>=2.10",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3", "httpx>=0.28"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
