@@ -1,0 +1,243 @@
+{
+  "generated_at": "2026-08-03",
+  "stats": {
+    "patients": 500,
+    "dentists": 8,
+    "services": 25,
+    "sessions_last_year": 2400,
+    "appointments_last_year": 3000
+  },
+  "dentists": [
+    {
+      "name": "دکتر کامران اکبری",
+      "specialty": "کودکان",
+      "license_number": "MD-12611",
+      "experience_years": 7
+    },
+    {
+      "name": "دکتر غزاله مقدم",
+      "specialty": "ایمپلنت",
+      "license_number": "MD-12984",
+      "experience_years": 7
+    },
+    {
+      "name": "دکتر الهام غفاری",
+      "specialty": "جراح",
+      "license_number": "MD-11865",
+      "experience_years": 4
+    },
+    {
+      "name": "دکتر پویا رستمی",
+      "specialty": "ارتودنسی",
+      "license_number": "MD-11492",
+      "experience_years": 4
+    },
+    {
+      "name": "دکتر علی کریمی",
+      "specialty": "عمومی",
+      "license_number": "MD-10746",
+      "experience_years": 3
+    },
+    {
+      "name": "دکتر علی علوی",
+      "specialty": "عمومی",
+      "license_number": "MD-11119",
+      "experience_years": 3
+    },
+    {
+      "name": "دکتر پدرام مرادی",
+      "specialty": "جراح",
+      "license_number": "MD-12238",
+      "experience_years": 2
+    },
+    {
+      "name": "دکتر میلاد میرزایی",
+      "specialty": "عمومی",
+      "license_number": "MD-10373",
+      "experience_years": 2
+    }
+  ],
+  "services": [
+    {
+      "name": "معاینه و تشخیص",
+      "category": "تشخیصی",
+      "base_price": 150000,
+      "duration_minutes": 20,
+      "description": "معاینه اولیه و تشخیص وضعیت دهان و دندان"
+    },
+    {
+      "name": "رادیوگرافی پری‌اپیکال",
+      "category": "تشخیصی",
+      "base_price": 200000,
+      "duration_minutes": 15,
+      "description": "عکس‌برداری موضعی از یک دندان"
+    },
+    {
+      "name": "رادیوگرافی پانورامیک",
+      "category": "تشخیصی",
+      "base_price": 400000,
+      "duration_minutes": 20,
+      "description": "عکس‌برداری کامل از فک و دندان‌ها"
+    },
+    {
+      "name": "جرم‌گیری",
+      "category": "درمانی",
+      "base_price": 650000,
+      "duration_minutes": 45,
+      "description": "پاک‌سازی جرم و پلاک دندانی"
+    },
+    {
+      "name": "فلوراید تراپی",
+      "category": "درمانی",
+      "base_price": 300000,
+      "duration_minutes": 20,
+      "description": "پیشگیری از پوسیدگی با فلوراید"
+    },
+    {
+      "name": "فیشورسیلانت",
+      "category": "درمانی",
+      "base_price": 500000,
+      "duration_minutes": 30,
+      "description": "پوشاندن شیارهای دندان برای پیشگیری"
+    },
+    {
+      "name": "پر کردن آمالگام",
+      "category": "درمانی",
+      "base_price": 1000000,
+      "duration_minutes": 45,
+      "description": "ترمیم دندان با آمالگام"
+    },
+    {
+      "name": "پر کردن کامپوزیت",
+      "category": "درمانی",
+      "base_price": 1250000,
+      "duration_minutes": 60,
+      "description": "ترمیم هم‌رنگ دندان با کامپوزیت"
+    },
+    {
+      "name": "ترمیم زیبایی کامپوزیت",
+      "category": "زیبایی",
+      "base_price": 2000000,
+      "duration_minutes": 60,
+      "description": "اصلاح فرم و رنگ دندان با کامپوزیت"
+    },
+    {
+      "name": "عصب‌کشی تک‌کاناله",
+      "category": "درمانی",
+      "base_price": 2400000,
+      "duration_minutes": 60,
+      "description": "درمان ریشه دندان تک‌کاناله"
+    },
+    {
+      "name": "عصب‌کشی دوکاناله",
+      "category": "درمانی",
+      "base_price": 2950000,
+      "duration_minutes": 75,
+      "description": "درمان ریشه دندان دوکاناله"
+    },
+    {
+      "name": "عصب‌کشی سه‌کاناله",
+      "category": "درمانی",
+      "base_price": 3500000,
+      "duration_minutes": 90,
+      "description": "درمان ریشه دندان سه‌کاناله"
+    },
+    {
+      "name": "کشیدن دندان ساده",
+      "category": "جراحی",
+      "base_price": 800000,
+      "duration_minutes": 30,
+      "description": "خارج کردن دندان به روش ساده"
+    },
+    {
+      "name": "کشیدن دندان عقل نهفته",
+      "category": "جراحی",
+      "base_price": 4500000,
+      "duration_minutes": 90,
+      "description": "جراحی خارج کردن دندان عقل نهفته"
+    },
+    {
+      "name": "جراحی لثه",
+      "category": "جراحی",
+      "base_price": 6000000,
+      "duration_minutes": 90,
+      "description": "جراحی درمانی یا زیبایی لثه"
+    },
+    {
+      "name": "ایمپلنت دندان",
+      "category": "جراحی",
+      "base_price": 22500000,
+      "duration_minutes": 120,
+      "description": "کاشت پایه ایمپلنت در استخوان فک"
+    },
+    {
+      "name": "پیوند استخوان",
+      "category": "جراحی",
+      "base_price": 11500000,
+      "duration_minutes": 90,
+      "description": "بازسازی استخوان فک پیش از ایمپلنت"
+    },
+    {
+      "name": "روکش PFM",
+      "category": "درمانی",
+      "base_price": 4000000,
+      "duration_minutes": 60,
+      "description": "روکش فلز-سرامیک"
+    },
+    {
+      "name": "روکش زیرکونیا",
+      "category": "زیبایی",
+      "base_price": 8000000,
+      "duration_minutes": 60,
+      "description": "روکش تمام‌سرامیک زیرکونیا"
+    },
+    {
+      "name": "بریج سه واحدی",
+      "category": "درمانی",
+      "base_price": 12000000,
+      "duration_minutes": 90,
+      "description": "جایگزینی دندان از دست رفته با بریج"
+    },
+    {
+      "name": "لمینت سرامیکی",
+      "category": "زیبایی",
+      "base_price": 9500000,
+      "duration_minutes": 90,
+      "description": "روکش نازک سرامیکی سطح جلویی دندان"
+    },
+    {
+      "name": "بلیچینگ",
+      "category": "زیبایی",
+      "base_price": 3000000,
+      "duration_minutes": 60,
+      "description": "سفید کردن دندان در مطب"
+    },
+    {
+      "name": "پروتز کامل متحرک",
+      "category": "درمانی",
+      "base_price": 14000000,
+      "duration_minutes": 60,
+      "description": "دست دندان کامل متحرک"
+    },
+    {
+      "name": "ارتودنسی ثابت",
+      "category": "درمانی",
+      "base_price": 42000000,
+      "duration_minutes": 120,
+      "description": "بستن براکت و شروع درمان ارتودنسی ثابت"
+    },
+    {
+      "name": "ویزیت دوره‌ای ارتودنسی",
+      "category": "درمانی",
+      "base_price": 2400000,
+      "duration_minutes": 20,
+      "description": "کنترل و تنظیم دوره‌ای سیم ارتودنسی"
+    }
+  ],
+  "insurance": [
+    "تامین اجتماعی",
+    "بیمه ایران",
+    "بیمه دانا",
+    "بیمه آسیا"
+  ]
+}

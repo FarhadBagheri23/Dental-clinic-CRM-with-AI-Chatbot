@@ -1,0 +1,4 @@
+{
+  "//": "Scopes ESM to lib/ so these modules can be run directly by Node (e.g. session.test.mjs) without making the whole app type:module, which would break the CJS tailwind config and the standalone server.",
+  "type": "module"
+}

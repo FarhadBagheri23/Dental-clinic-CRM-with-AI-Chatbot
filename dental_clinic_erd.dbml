@@ -1,0 +1,151 @@
+// ============================================================
+// ERD: Dental Clinic Management System (کلینیک دندان‌پزشکی)
+// Business Intelligence Final Project — Sharif University
+// Student: فرهاد باقری طاهری
+// Paste this entire file into https://dbdiagram.io to render.
+// ============================================================
+
+Table Insurance {
+  insurance_id int [pk, increment]
+  company_name varchar(100) [not null, note: 'مثل: تامین اجتماعی، ایران، دانا']
+  policy_number varchar(50) [unique, not null]
+  coverage_percentage decimal(5,2) [not null, note: '0-100']
+  expiry_date date [not null]
+
+  Note: 'شرکت‌های بیمه طرف قرارداد کلینیک'
+}
+
+Table Patient {
+  patient_id int [pk, increment]
+  national_code varchar(10) [unique, not null]
+  first_name varchar(50) [not null]
+  last_name varchar(50) [not null]
+  birth_date date [not null]
+  gender varchar(10) [not null, note: 'زن / مرد']
+  phone varchar(11) [not null]
+  address varchar(255)
+  blood_type varchar(5)
+  allergies varchar(255)
+  insurance_id int [ref: > Insurance.insurance_id]
+  registration_date date [not null]
+
+  Note: 'بیماران ثبت‌نام‌شده در کلینیک'
+}
+
+Table Dentist {
+  dentist_id int [pk, increment]
+  first_name varchar(50) [not null]
+  last_name varchar(50) [not null]
+  specialty varchar(50) [not null, note: 'عمومی / ارتودنسی / جراح / کودکان / ایمپلنت']
+  license_number varchar(20) [unique, not null]
+  hire_date date [not null]
+  commission_rate decimal(5,2) [not null, note: 'درصد سهم پزشک از درآمد']
+
+  Note: 'پزشکان شاغل در کلینیک'
+}
+
+Table Staff {
+  staff_id int [pk, increment]
+  first_name varchar(50) [not null]
+  last_name varchar(50) [not null]
+  role varchar(30) [not null, note: 'پذیرش / دستیار / حسابدار']
+  phone varchar(11) [not null]
+  hire_date date [not null]
+  salary decimal(12,0) [not null]
+
+  Note: 'کارکنان اداری و دستیاران'
+}
+
+Table Service {
+  service_id int [pk, increment]
+  name varchar(100) [not null, note: 'مثل: معاینه، جرم‌گیری، عصب‌کشی']
+  category varchar(30) [not null, note: 'تشخیصی / درمانی / زیبایی / جراحی']
+  base_price decimal(12,0) [not null]
+  duration_minutes int [not null]
+  description varchar(255)
+
+  Note: 'کاتالوگ خدمات کلینیک'
+}
+
+Table Appointment {
+  appointment_id int [pk, increment]
+  patient_id int [not null, ref: > Patient.patient_id]
+  dentist_id int [not null, ref: > Dentist.dentist_id]
+  created_by_staff_id int [ref: > Staff.staff_id]
+  scheduled_datetime datetime [not null]
+  status varchar(20) [not null, note: 'رزرو / انجام‌شده / لغو / غایب']
+  chair_number int [not null, note: '1..6']
+
+  Note: 'نوبت‌های رزرو شده'
+}
+
+Table TreatmentPlan {
+  plan_id int [pk, increment]
+  patient_id int [not null, ref: > Patient.patient_id]
+  dentist_id int [not null, ref: > Dentist.dentist_id]
+  start_date date [not null]
+  estimated_end_date date [not null]
+  total_estimated_cost decimal(12,0) [not null]
+  status varchar(20) [not null, note: 'فعال / تکمیل‌شده / معلق / لغو']
+
+  Note: 'طرح‌های درمان چندجلسه‌ای'
+}
+
+Table TreatmentSession {
+  session_id int [pk, increment]
+  plan_id int [not null, ref: > TreatmentPlan.plan_id]
+  appointment_id int [unique, not null, ref: - Appointment.appointment_id]
+  service_id int [not null, ref: > Service.service_id]
+  tooth_number int [note: '1..32']
+  session_date datetime [not null]
+  actual_cost decimal(12,0) [not null]
+  notes varchar(500)
+
+  Note: 'جلسات انجام‌شده درمان'
+}
+
+Table Invoice {
+  invoice_id int [pk, increment]
+  patient_id int [not null, ref: > Patient.patient_id]
+  plan_id int [unique, ref: - TreatmentPlan.plan_id]
+  issue_date date [not null]
+  total_amount decimal(12,0) [not null]
+  insurance_covered decimal(12,0) [default: 0]
+  patient_share decimal(12,0) [not null]
+  status varchar(20) [not null, note: 'پرداخت‌شده / بخشی / معوق']
+
+  Note: 'فاکتورهای صادرشده'
+}
+
+Table Payment {
+  payment_id int [pk, increment]
+  invoice_id int [not null, ref: > Invoice.invoice_id]
+  amount decimal(12,0) [not null]
+  payment_date date [not null]
+  method varchar(20) [not null, note: 'نقد / کارت / بیمه / چک']
+  reference_number varchar(50)
+
+  Note: 'پرداخت‌ها (میتونه اقساطی باشه)'
+}
+
+Table Consumable {
+  consumable_id int [pk, increment]
+  name varchar(100) [not null, note: 'لیدوکائین، کامپوزیت، دستکش']
+  unit varchar(20) [not null, note: 'میلی‌لیتر / گرم / عدد']
+  stock_quantity decimal(10,2) [not null]
+  min_stock_level decimal(10,2) [not null]
+  unit_price decimal(12,0) [not null]
+  supplier varchar(100)
+
+  Note: 'مواد و لوازم مصرفی انبار'
+}
+
+Table ConsumableUsage {
+  usage_id int [pk, increment]
+  consumable_id int [not null, ref: > Consumable.consumable_id]
+  session_id int [not null, ref: > TreatmentSession.session_id]
+  quantity_used decimal(10,2) [not null]
+  usage_date datetime [not null]
+
+  Note: 'مصرف مواد در هر جلسه (رابطه N..N)'
+}

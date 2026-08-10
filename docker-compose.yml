@@ -1,0 +1,85 @@
+name: dental-clinic
+
+services:
+  # ---------------------------------------------------------------- database
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-dental_clinic}
+    volumes:
+      - mongo-data:/data/db
+    # Bound to localhost only — the CRM reaches Mongo over the internal
+    # network, so this is for local tooling (Compass, mongosh) and must not
+    # be published to 0.0.0.0 on a public VPS.
+    ports:
+      - "127.0.0.1:${MONGO_PORT:-27017}:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks: [clinic]
+
+  # ------------------------------------------------- CSV -> MongoDB (one-shot)
+  seed:
+    build:
+      context: .
+      dockerfile: seeder/Dockerfile
+    restart: "no"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGO_URL: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/?authSource=admin
+      MONGO_DB: ${MONGO_DB:-dental_clinic}
+      DATA_DIR: /data
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+    volumes:
+      - ./data:/data:ro
+    networks: [clinic]
+
+  # ------------------------------------------------------------- clinic site
+  web:
+    build:
+      context: .
+      dockerfile: website/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+      seed:
+        condition: service_completed_successfully
+    environment:
+      MONGO_URL: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/?authSource=admin
+      MONGO_DB: ${MONGO_DB:-dental_clinic}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    networks: [clinic]
+
+  # ---------------------------------------------- regenerate data (on demand)
+  # docker compose --profile generate run --rm generate
+  generate:
+    build:
+      context: .
+      dockerfile: seeder/Dockerfile
+    profiles: [generate]
+    command: python scripts/generate_data.py
+    # generate_data.py resolves its output paths relative to the script, so
+    # these mounts must mirror the repo layout inside /app.
+    volumes:
+      - ./data:/app/data
+      - ./website/app:/app/website/app
+    networks: [clinic]
+
+volumes:
+  mongo-data:
+
+networks:
+  clinic:
+    driver: bridge
