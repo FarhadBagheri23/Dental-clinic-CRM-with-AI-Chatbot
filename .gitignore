@@ -12,3 +12,5 @@ report/screenshots/*
 __pycache__/
 *.egg-info/
 .pytest_cache/
+dist/
+node_modules/

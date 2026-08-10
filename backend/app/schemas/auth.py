@@ -27,8 +27,12 @@ class LoginRequest(BaseModel):
     @classmethod
     def username_is_english(cls, v: str) -> str:
         if not USERNAME_RE.fullmatch(v):
+            # Punctuation is spelled out in words: bare "." "_" "-" inside
+            # Persian text get reordered by the bidi algorithm and render
+            # scrambled in the browser.
             raise ValueError(
-                f"نام کاربری فقط می‌تواند شامل حروف انگلیسی، ارقام و . _ - باشد. {KEYBOARD_HINT}"
+                "نام کاربری فقط می‌تواند شامل حروف انگلیسی، ارقام، نقطه، زیرخط "
+                f"و خط تیره باشد. {KEYBOARD_HINT}"
             )
         return v
 

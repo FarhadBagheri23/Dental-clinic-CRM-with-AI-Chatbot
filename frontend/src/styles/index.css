@@ -1,0 +1,32 @@
+/* Self-hosted so the panel renders correctly on an Iranian VPS, where the
+   Google Fonts CDN the old site used is slow or blocked. */
+@import "@fontsource-variable/vazirmatn/index.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-ink-100 font-sans text-ink-800 antialiased;
+  }
+
+  /* Persian text sits low in the em box; a little extra leading keeps
+     descenders off the following line. */
+  :lang(fa) {
+    line-height: 1.85;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-white;
+  }
+}
+
+@layer utilities {
+  /* English-only fields inside an RTL page: force LTR so the caret starts on
+     the left and the text does not visually reorder as the user types. */
+  .field-ltr {
+    direction: ltr;
+    text-align: left;
+  }
+}
