@@ -6,6 +6,10 @@ import { LogoLockup } from "@/shared/ui/Logo";
 
 const NAV = [
   { to: "/dashboard", label: "داشبورد", d: "M4 13h6V4H4v9zm0 7h6v-5H4v5zm10 0h6V11h-6v9zm0-16v5h6V4h-6z" },
+  { to: "/revenue", label: "درآمد و خدمات", d: "M3 20h18M6 16V9m5 7V5m5 11v-4" },
+  { to: "/dentists", label: "عملکرد پزشکان", d: "M12 3a4 4 0 100 8 4 4 0 000-8zM5 21v-1a5 5 0 015-5h4a5 5 0 015 5v1" },
+  { to: "/operations", label: "عملیات", d: "M12 8v4l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
+  { to: "/finance", label: "مالی و انبار", d: "M3 10h18M7 15h4M5 6h14a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" },
   { to: "/patients", label: "بیماران", d: "M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-4 0-8 2-8 4.5V21h16v-2.5c0-2.5-4-4.5-8-4.5z" },
   { to: "/appointments", label: "نوبت‌ها", d: "M7 2v3M17 2v3M3 9h18M5 5h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2z" },
   { to: "/invoices", label: "فاکتورها", d: "M6 2h9l5 5v15H6V2zm8 1v5h5M9 13h7M9 17h7" },

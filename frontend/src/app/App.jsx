@@ -1,12 +1,15 @@
 import { RouterProvider } from "react-router-dom";
 
 import { AuthProvider } from "@/app/providers/AuthProvider";
+import { FiltersProvider } from "@/app/providers/FiltersProvider";
 import { router } from "@/app/router";
 
 export function App() {
   return (
     <AuthProvider>
-      <RouterProvider router={router} />
+      <FiltersProvider>
+        <RouterProvider router={router} />
+      </FiltersProvider>
     </AuthProvider>
   );
 }
