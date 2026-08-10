@@ -19,7 +19,7 @@ from app.api.deps import SESSION_COOKIE
 from app.main import app
 from app.core.security import DUMMY_HASH, create_token, read_token, verify_password
 
-PASSWORD = "s3cret-پسورد"
+PASSWORD = "CorrectHorse!1405"
 
 
 def seeder_hash(password: str) -> str:
@@ -131,6 +131,49 @@ def test_wrong_password_and_unknown_user_are_indistinguishable(client):
 
 def test_me_requires_a_session(client):
     assert client.get("/api/auth/me").status_code == 401
+
+
+# ------------------------------------------- English-only credential rules
+
+@pytest.mark.parametrize("username", [
+    "ادمین",           # Persian letters
+    "admin۱",          # Persian digit U+06F1 — looks like "admin1"
+    "ad min",          # space
+    "admin@clinic",    # '@' not in the allowed set
+])
+def test_non_english_username_is_rejected(client, username):
+    r = client.post("/api/auth/login",
+                    json={"username": username, "password": PASSWORD})
+    assert r.status_code == 422
+    assert "انگلیسی" in r.text
+
+
+@pytest.mark.parametrize("password", [
+    "رمزعبور",              # Persian letters
+    "Correct۱405",         # Persian digit hiding in an otherwise ASCII password
+    "has space",           # space
+])
+def test_non_english_password_is_rejected(client, password):
+    r = client.post("/api/auth/login",
+                    json={"username": "admin", "password": password})
+    assert r.status_code == 422
+    assert "انگلیسی" in r.text
+
+
+def test_persian_digit_is_not_treated_as_its_ascii_lookalike(client):
+    """U+06F1 renders as '۱' and is visually confusable with '1'. It must not
+    silently pass as the ASCII digit."""
+    assert "۱" != "1"
+    r = client.post("/api/auth/login",
+                    json={"username": "admin", "password": "CorrectHorse!۱405"})
+    assert r.status_code == 422
+
+
+def test_ascii_symbols_are_still_allowed_in_passwords(client):
+    """The rule bans non-English, not punctuation — don't weaken passwords."""
+    for pw in ["p@ssw0rd!", "~`{}|:<>?", "A" * 256]:
+        r = client.post("/api/auth/login", json={"username": "admin", "password": pw})
+        assert r.status_code == 401, f"{pw!r} should reach auth, not be rejected as invalid"
 
 
 def test_logout_clears_the_session(client):

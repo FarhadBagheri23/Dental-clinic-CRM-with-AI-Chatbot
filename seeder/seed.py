@@ -16,6 +16,7 @@ Env:
 import csv
 import hashlib
 import os
+import re
 import secrets
 import sys
 import time
@@ -199,6 +200,19 @@ def seed_admin(db):
         raise SystemExit(
             "ADMIN_PASSWORD is not set — refusing to create a CRM account "
             "without a password. Set it in .env")
+
+    # The login endpoint accepts English-only credentials, so an account
+    # created with Persian characters here could never be used. Fail at seed
+    # time rather than hand back an account nobody can log into.
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", ADMIN_USERNAME):
+        raise SystemExit(
+            f"ADMIN_USERNAME {ADMIN_USERNAME!r} must use Latin letters, digits, "
+            "'.', '_' or '-' only.")
+    if not re.fullmatch(r"[\x21-\x7E]+", ADMIN_PASSWORD):
+        raise SystemExit(
+            "ADMIN_PASSWORD must use printable ASCII characters only, no spaces "
+            "— check for Persian characters or digits from an RTL keyboard layout.")
+
     db.drop_collection("users")
     db.users.insert_one({
         "username": ADMIN_USERNAME,
