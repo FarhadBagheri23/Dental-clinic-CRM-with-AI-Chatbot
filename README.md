@@ -1,157 +1,125 @@
-# سامانه هوش تجاری کلینیک دندان‌پزشکی
+# Business Intelligence Dashboard With AI Chatbot
 
-**پروژه پایانی درس هوش تجاری — دانشگاه صنعتی شریف**
-**دانشجو:** فرهاد باقری طاهری
+**Farhad Bagheri Taheri — Sharif University of Technology, International Campus**
 
-داشبورد مدیریتی یک کلینیک دندان‌پزشکی: هفت صفحه تحلیلی فارسی و RTL، روی
-MongoDB، با یک دستیار هوشمند که اعدادش را از همان گزارش‌های داشبورد می‌خواند.
+A management dashboard for a dental clinic: seven analytical pages in Persian
+and RTL, on MongoDB, with an AI assistant that reads its numbers from the same
+reports the dashboard renders.
 
-> داده‌ها **مصنوعی** است — با `Faker("fa_IR")` و seed ثابت ۴۲ تولید شده.
-
----
-
-## داشبورد چه چیزی نشان می‌دهد
-
-| صفحه | پرسشی که پاسخ می‌دهد |
-|---|---|
-| **داشبورد** | نمای کلی: درآمد، وصولی، مطالبات، نوبت‌ها، و روند ۱۲ ماهه |
-| **درآمد و خدمات** | کدام خدمت واقعاً پول می‌سازد — درآمد به ازای هر ساعت unit، نه درآمد ناخالص |
-| **عملکرد پزشکان** | درآمد، commission، سهم خالص کلینیک، درآمد هر ساعت unit، نرخ لغو و غیبت |
-| **عملیات** | نرخ لغو و غیبت، heatmap ساعات هفته، بهره‌وری unitها، هزینه نوبت ازدست‌رفته به تومان |
-| **طرح درمان و فراخوان** | نرخ پذیرش طرح، درمان تأییدشده‌ی انجام‌نشده، لیست تماس بیماران لغزیده |
-| **مالی و انبار** | زنجیره صورتحساب ← بیمه ← وصول، روش پرداخت، بهای مواد، موجودی انبار |
-| **سودآوری و مطالبات** | حاشیه سود هر خدمت، ساختار هزینه، تخفیف پنهان، سن مطالبات و DSO |
-
-سه صفحه رکورد هم هست: بیماران، نوبت‌ها و فاکتورها — با جست‌وجو و صفحه‌بندی.
-
-### شاخص‌هایی که عمداً غیرمعمول محاسبه شده‌اند
-
-- **درآمد به ازای ساعت unit** — رتبه‌بندی بر پایه درآمد ناخالص، خدمتِ ارزانِ
-  پرتکرار را ستاره نشان می‌دهد. تقسیم بر زمانی که از unit می‌گیرد نشان می‌دهد
-  چه چیزی واقعاً از ظرفیت پول می‌سازد.
-- **حاشیه سود هر خدمت** — درآمد منهای مواد مصرفی و commission. جدول از
-  کم‌حاشیه به پرحاشیه مرتب شده، چون پرکارترین خدمت در صدر گزارش‌های درآمدی
-  می‌نشیند و ممکن است کمترین سود را بسازد.
-- **نرخ وصول cohort** — پرداخت‌ها با فاکتورهای *همان بازه* تطبیق داده می‌شوند.
-  تقسیم نقد دریافتی بر مبلغ صورتحساب همان ماه، دو جمعیت متفاوت را مقایسه
-  می‌کند و نرخ وصول بالای ۱۰۰٪ می‌سازد.
-- **بهره‌وری unit** — مخرج از `clinic_capacity` می‌آید، نه از «تعداد unit ×
-  ساعات کاری»؛ unitها شیفت یکسان ندارند.
-- **DSO و سن مطالبات** — یک مبلغ کل مطالبات، چه همه‌اش تازه باشد چه نیمی‌اش
-  سوخت‌شده، دقیقاً یک شکل دیده می‌شود.
-
-### فیلترها
-
-پنج فیلتر سراسری: بازه تاریخ، تخصص پزشک، دسته خدمت، شرکت بیمه.
-
-بعضی ترکیب‌ها ذاتاً غیرممکن‌اند و به‌جای تقریب‌زدن، زیر همان نمودار اعلام
-می‌شوند — مثلاً نوبتِ لغوشده اصلاً session ندارد، پس service و دسته‌ای هم
-ندارد؛ اعمال فیلتر «دسته خدمت» روی نمودار لغو نوبت، همان ردیف‌هایی را حذف
-می‌کند که نمودار برای شمردن‌شان ساخته شده.
-
-### دستیار هوشمند
-
-دستیار محاسبه نمی‌کند: هر عدد از همان repository‌ای می‌آید که داشبورد رندر
-می‌کند، تا هر پاسخ با صفحه‌ای که از آن آمده قابل مقایسه باشد. دامنه پاسخ به
-کلینیک محدود است. بدون `AVALAI_API_KEY` بقیه پنل عادی کار می‌کند و فقط تب
-گفت‌وگو غیرفعال است.
+> The data is **synthetic** — generated with `Faker("fa_IR")` and a fixed
+> seed of 42.
 
 ---
 
-## اجرا
+## What the dashboard shows
 
-### Docker
-
-```bash
-cp .env.example .env      # مقادیر را تغییر دهید
-docker compose up -d --build
-```
-
-| | |
+| Page | The question it answers |
 |---|---|
-| پنل مدیریت | http://localhost:8080 |
-| وب‌سایت عمومی | http://localhost:3000 |
+| **Overview** | Revenue, collections, receivables, appointments, and the 12-month trend |
+| **Revenue & Services** | Which service actually makes money — revenue per chair-hour, not gross revenue |
+| **Dentist Performance** | Revenue, commission, the clinic's net share, revenue per chair-hour, cancellation and no-show rates |
+| **Operations** | Cancellation and no-show rates, weekday × hour heatmap, chair utilisation, the cost of a lost slot in tomans |
+| **Treatment Plans & Recall** | Case acceptance, treatment accepted but never delivered, the call list for lapsed patients |
+| **Finance & Inventory** | The billed → insurance → collected chain, payment methods, material cost, stock levels |
+| **Profitability & Receivables** | Gross margin per service, cost structure, hidden discount, A/R ageing and DSO |
 
-مقادیری که حتماً باید در `.env` ست شوند:
+Three record pages as well — patients, appointments and invoices — with search
+and pagination.
 
-```bash
-SESSION_SECRET=$(openssl rand -hex 32)
-API_DB_PASSWORD=$(openssl rand -hex 24)
-MONGO_ROOT_PASSWORD=...
-ADMIN_PASSWORD=...
-```
+---
 
-username و password پنل فقط با حروف و ارقام انگلیسی پذیرفته می‌شود.
+## Metrics computed unconventionally, on purpose
 
-### محلی
+- **Revenue per chair-hour** — ranking by gross revenue makes a cheap,
+  high-volume service look like the star. Dividing by the chair time it
+  consumes shows what actually earns from the clinic's capacity.
 
-```bash
-mongod --dbpath ~/.local/share/dental-mongo --port 27017
-DATA_DIR=./data MONGO_URL=mongodb://127.0.0.1:27017 .venv/bin/python seeder/seed.py
-.venv/bin/uvicorn app.main:app --port 8000 --app-dir backend --reload
-npm run dev --prefix frontend            # http://localhost:5173
-```
+- **Gross margin per service** — revenue minus materials and commission. The
+  table is sorted from worst margin to best, because the busiest service sits
+  at the top of every revenue report and may well be the least profitable one.
 
-Vite مسیر `/api` را proxy می‌کند تا مرورگر روی یک origin بماند و session
-cookie ،same-origin باشد — همان کاری که در production، nginx انجام می‌دهد.
+- **Cohort collection rate** — payments are matched to the invoices issued in
+  *the same window*. Dividing cash received by what was billed that month
+  compares two different populations and produces collection rates above 100%.
+
+- **Chair utilisation** — the denominator comes from `clinic_capacity`, not
+  from "chairs × opening hours". The chairs are not staffed identical shifts.
+
+- **DSO and A/R ageing** — a single outstanding total looks exactly the same
+  whether every invoice is current or half of them are uncollectable.
+
+---
+
+## Filters
+
+Five global filters: date range, dentist specialty, service category and
+insurance company.
+
+Some combinations are structurally impossible, and rather than approximate
+them the affected chart says so beneath itself. A cancelled appointment never
+produced a session, so it has no service and no category — applying the
+category filter to a cancellation chart would delete exactly the rows the
+chart exists to count.
+
+---
+
+## AI assistant
+
+**It is a RAG system, but a hybrid one, and the split is the point.**
+
+- **Retrieval (BM25)** answers prose questions — what a service is, what an
+  insurer covers, how a front-desk procedure runs. The index is lexical, built
+  in memory over service descriptions, insurance terms and the flow specs. No
+  vector store and no embedding API: the corpus is a few hundred short Persian
+  documents, nothing needs re-embedding when a price changes, and clinic
+  questions lean on exact nouns — «بیمه دانا», «ایمپلنت» — which is where
+  lexical matching beats semantic similarity.
+
+- **Tool calls answer everything countable.** No figure is ever retrieved or
+  computed by the model. Each one comes from the same repository function the
+  dashboard renders, so any answer can be checked against the page it came
+  from. Retrieving an invoice row by keyword similarity and letting a language
+  model add it up is how a chatbot reports ۴۲ میلیون for a ۱٫۲ میلیارد month.
+
+The assistant's scope is limited to the clinic and it declines anything else.
+Without `AVALAI_API_KEY` the rest of the panel runs normally and only the chat
+tab is disabled.
 
 ---
 
 ## Stack
 
-| لایه | فناوری |
+| Layer | Technology |
 |---|---|
-| مدل داده | DBML (۱۳ entity) |
-| تولید داده | Python 3.12 + Faker (fa_IR) |
-| پایگاه داده | MongoDB 7 |
+| Data model | DBML (13 entities) |
+| Data generation | Python 3.12 + Faker (fa_IR), fixed seed |
+| Database | MongoDB 7 |
 | API | FastAPI + Motor (async) |
-| پنل | React 18 + Vite + Tailwind CSS + Vazirmatn |
-| دستیار | tool-calling روی همان repositoryها (AvalAI gateway) |
-| وب‌سایت | Next.js 14 |
-| استقرار | Docker Compose + nginx |
+| Panel | React 18 + Vite + Tailwind CSS + Vazirmatn |
+| Assistant | BM25 retrieval + tool-calling over the same repositories (AvalAI gateway) |
+| Public site | Next.js 14 |
+| Deployment | Docker Compose + nginx |
 
 ```
-├── data/                      ۱۳ فایل CSV (۱۱٬۳۸۰ رکورد)
-├── scripts/generate_data.py   مولد داده
+├── data/                      13 CSV files (11,380 records)
+├── scripts/generate_data.py   data generator
 ├── seeder/seed.py             CSV → MongoDB
 ├── backend/app/
-│   ├── api/routers/           لایه HTTP
-│   ├── repositories/          aggregation pipelineها — منبع همه اعداد
-│   ├── agent/                 دستیار
-│   └── core/                  config، security، roles، rate limit
-├── frontend/src/pages/        ۷ صفحه داشبورد + ۳ صفحه رکورد
-└── website/                   وب‌سایت عمومی
+│   ├── api/routers/           HTTP layer
+│   ├── repositories/          aggregation pipelines — the source of every number
+│   ├── agent/                 assistant: retrieval, tools, tool-calling loop
+│   └── core/                  config, security, roles, rate limiting
+├── frontend/src/pages/        7 dashboard pages + 3 record pages
+└── website/                   public clinic site
 ```
 
 ---
 
-## امنیت
-
-| کنترل | پیاده‌سازی |
-|---|---|
-| password | scrypt، مقایسه در زمان ثابت |
-| user enumeration | dummy hash برای کاربر ناموجود |
-| session | JWT در cookie با httpOnly + SameSite=Lax |
-| brute force | lockout ۱۵ دقیقه‌ای پس از ۵ خطا، به تفکیک (user, IP) |
-| roles | redaction در **کد**، نه در prompt |
-| headers | CSP، `frame-ancestors 'none'`، nosniff، Referrer-Policy |
-| دسترسی DB | API با یک least-privilege user وارد می‌شود، نه root |
-
----
-
-## آزمون‌ها
+## Running it
 
 ```bash
-cd backend && ../.venv/bin/python -m pytest -q      # ۱۲۳ تست
-npm run build --prefix frontend
+cp .env.example .env      # then change every value
+docker compose up -d --build
 ```
 
-تست‌های integration به یک MongoDB محلی نیاز دارند و در نبودش skip می‌شوند.
-
----
-
-## بازتولید داده
-
-```bash
-python scripts/generate_data.py       # seed ثابت ⇒ خروجی یکسان
-```
+Panel on http://localhost:8080, public site on http://localhost:3000.
