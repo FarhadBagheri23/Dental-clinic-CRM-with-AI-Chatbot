@@ -246,12 +246,10 @@ def seed_api_account(db):
 
     Idempotent: `updateUser` on re-seed keeps a rotated password in .env
     working instead of failing on an account that already exists.
-    """
-    if not API_DB_PASSWORD:
-        raise SystemExit(
-            "API_DB_PASSWORD is not set — refusing to fall back to the root "
-            "account for the API. Set it in .env")
 
+    The caller decides whether to run this at all — an unauthenticated local
+    mongod has no accounts to create.
+    """
     roles = [{"role": "readWrite", "db": MONGO_DB}]
     try:
         db.command("createUser", API_DB_USERNAME, pwd=API_DB_PASSWORD, roles=roles)
@@ -279,6 +277,16 @@ def main():
 
     seed_admin(db)
     print(f"\n  {'users':<22} {1:>6} document  (CRM login: {ADMIN_USERNAME})")
+
+    # Skipped when no password is configured, which is the normal case for a
+    # local mongod started without --auth: there are no accounts to create
+    # because nothing is authenticating. Compose always sets it, so a real
+    # deployment still gets the least-privilege user the API logs in as.
+    if API_DB_PASSWORD:
+        seed_api_account(db)
+    else:
+        print(f"  {'db user':<22} {'skipped':>6}  (API_DB_PASSWORD not set)")
+
     print(f"\ntotal {total:,} documents across {len(SCHEMA)} collections")
     print("seed complete.")
 
