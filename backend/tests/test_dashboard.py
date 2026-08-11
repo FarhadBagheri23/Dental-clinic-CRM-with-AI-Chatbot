@@ -67,8 +67,19 @@ def db():
         {"consumable_id": 3, "name": "کافی", "unit": "عدد", "stock_quantity": 100,
          "min_stock_level": 10, "unit_price": 100, "supplier": "ج"},
     ])
+    # Sessions carry the same money as the invoices above, on the same dates.
+    # The trend chart reads revenue from here — invoices say when the clinic
+    # billed, sessions say when it did the work.
+    d.treatment_sessions.insert_many([
+        {"session_id": 1, "plan_id": 1, "service_id": 1, "actual_cost": 1000,
+         "session_date": datetime(2026, 5, 10)},
+        {"session_id": 2, "plan_id": 2, "service_id": 1, "actual_cost": 500,
+         "session_date": datetime(2026, 6, 5)},
+        {"session_id": 3, "plan_id": 3, "service_id": 1, "actual_cost": 300,
+         "session_date": datetime(2026, 6, 20)},
+    ])
     d.patients.insert_many([{"patient_id": i} for i in range(1, 26)])
-    for c in ("appointments", "treatment_sessions", "dentists"):
+    for c in ("appointments", "dentists"):
         d[c].insert_one({"_id": f"seed-{c}"})
     d.appointments.delete_many({})
     d.appointments.insert_many([
@@ -110,8 +121,8 @@ async def test_summary_counts(db):
 
 
 @pytest.mark.asyncio
-async def test_revenue_trend_aligns_payments_to_billed_months(db):
-    """Regression: limiting invoices and payments to their own top-N months
+async def test_revenue_trend_aligns_payments_to_delivered_months(db):
+    """Regression: limiting revenue and payments to their own top-N months
     independently let them disagree, and a month present in one but not the
     other silently reported zero collected."""
     from app.repositories.dashboard import get_revenue_trend
@@ -134,6 +145,28 @@ async def test_revenue_trend_narrow_window_keeps_its_payments(db):
     assert len(rows) == 1
     assert rows[0]["month"] == "2026-06"
     assert rows[0]["collected"] == 150, "newest month lost its payments"
+
+
+@pytest.mark.asyncio
+async def test_revenue_trend_measures_delivery_not_billing(db):
+    """The landing chart must agree with the analytics pages, which all sum
+    session revenue. Sourcing it from invoice issue dates made a twelve-month
+    trend collapse into however many months the billing run happened to touch."""
+    from app.repositories.dashboard import get_revenue_trend
+
+    # Same money, billed a year after it was earned.
+    db_sync = _client()["dental_clinic_test"]
+    db_sync.treatment_sessions.insert_one(
+        {"session_id": 4, "plan_id": 4, "service_id": 1, "actual_cost": 700,
+         "session_date": datetime(2025, 9, 3)})
+    db_sync.invoices.insert_one(
+        {"invoice_id": 4, "issue_date": datetime(2026, 6, 25), "total_amount": 700,
+         "insurance_covered": 0, "patient_share": 700, "status": "معوق"})
+
+    rows = await get_revenue_trend(db, months=12)
+    months = {r["month"]: r["revenue"] for r in rows}
+    assert months["2025-09"] == 700, "delivery month must appear, not the billing month"
+    assert months["2026-06"] == 800, "billing must not inflate the month it was raised in"
 
 
 @pytest.mark.asyncio

@@ -12,12 +12,10 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 STATUS_BOOKED = "رزرو"
 
 
-def _sum(field: str) -> list[dict]:
-    return [{"$group": {"_id": None, "v": {"$sum": f"${field}"}}}]
-
-
 async def _scalar(db: AsyncIOMotorDatabase, collection: str, field: str) -> float:
-    rows = await db[collection].aggregate(_sum(field)).to_list(1)
+    rows = await db[collection].aggregate(
+        [{"$group": {"_id": None, "v": {"$sum": f"${field}"}}}]
+    ).to_list(1)
     return rows[0]["v"] if rows else 0
 
 
@@ -69,11 +67,19 @@ async def get_summary(db: AsyncIOMotorDatabase) -> dict:
 
 
 async def get_revenue_trend(db: AsyncIOMotorDatabase, months: int = 12) -> list[dict]:
-    """Revenue and collections per month, oldest first."""
-    billed = await db.invoices.aggregate([
+    """Revenue and collections per month, oldest first.
+
+    Revenue is measured at the treatment session — when the work was actually
+    delivered — not at the invoice issue date. Two reasons: every analytics
+    page already defines revenue that way, so sourcing it differently here
+    made the landing page disagree with the rest of the panel; and invoices
+    in this dataset are all raised inside one narrow recent window, which
+    collapsed a twelve-month trend into three bars.
+    """
+    billed = await db.treatment_sessions.aggregate([
         {"$group": {
-            "_id": {"$dateToString": {"format": "%Y-%m", "date": "$issue_date"}},
-            "revenue": {"$sum": "$total_amount"},
+            "_id": {"$dateToString": {"format": "%Y-%m", "date": "$session_date"}},
+            "revenue": {"$sum": "$actual_cost"},
         }},
         {"$sort": {"_id": -1}}, {"$limit": months},
     ]).to_list(None)

@@ -1,6 +1,5 @@
 import { useFilters } from "@/app/providers/FiltersProvider";
-import { analyticsApi } from "@/features/analytics/api/analyticsApi";
-import { useApiQuery } from "@/shared/hooks/useApiQuery";
+import { JalaliDateInput } from "@/shared/ui/JalaliDateInput";
 
 function Select({ label, value, onChange, options, placeholder }) {
   return (
@@ -22,30 +21,11 @@ function Select({ label, value, onChange, options, placeholder }) {
   );
 }
 
-function DateInput({ label, value, onChange, min, max }) {
-  return (
-    <label className="flex min-w-0 flex-col gap-1.5">
-      <span className="text-[11px] font-bold text-ink-500">{label}</span>
-      {/* Native date input: the browser renders a Gregorian picker, which is
-          what the stored data uses. Displayed values elsewhere are Jalali. */}
-      <input
-        type="date"
-        value={value}
-        min={min}
-        max={max}
-        onChange={(e) => onChange(e.target.value)}
-        className="field-ltr h-10 min-w-0 rounded-lg border border-ink-200 bg-white px-3 text-sm
-          text-ink-800 transition-colors hover:border-ink-300
-          focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
-      />
-    </label>
-  );
-}
-
 /** Global filter bar — report §۷ "فیلترهای سراسری". */
 export function FilterBar() {
-  const { filters, set, reset, activeCount } = useFilters();
-  const { data } = useApiQuery((s) => analyticsApi.options(s));
+  // Options come from the provider, which fetches them once for the whole
+  // app — this used to be a second request for the same document.
+  const { filters, set, reset, activeCount, options: data } = useFilters();
 
   const bounds = {
     min: data?.date_min?.slice(0, 10),
@@ -58,8 +38,8 @@ export function FilterBar() {
       className="mb-6 rounded-2xl border border-ink-200/80 bg-white p-4 shadow-card"
     >
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <DateInput label="از تاریخ" value={filters.date_from} onChange={(v) => set("date_from", v)} {...bounds} />
-        <DateInput label="تا تاریخ" value={filters.date_to} onChange={(v) => set("date_to", v)} {...bounds} />
+        <JalaliDateInput label="از تاریخ" value={filters.date_from} onChange={(v) => set("date_from", v)} {...bounds} />
+        <JalaliDateInput label="تا تاریخ" value={filters.date_to} onChange={(v) => set("date_to", v)} {...bounds} />
         <Select
           label="تخصص پزشک"
           value={filters.specialty}
@@ -85,8 +65,11 @@ export function FilterBar() {
 
       {activeCount > 0 && (
         <div className="mt-3 flex items-center justify-between gap-4 border-t border-ink-100 pt-3">
+          {/* Deliberately no longer claims every chart honoured every filter:
+              a few genuinely cannot, and each of those says so on its own
+              card. A blanket promise here was the misleading part. */}
           <span className="text-xs text-ink-500">
-            {`${activeCount} فیلتر فعال — همه نمودارها بر همین بازه محاسبه شده‌اند.`}
+            {`${activeCount} فیلتر فعال — نمودارهایی که فیلتری را اعمال نکرده‌اند، زیر همان نمودار توضیح داده‌اند.`}
           </span>
           <button
             onClick={reset}
