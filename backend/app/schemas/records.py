@@ -12,14 +12,14 @@ class PageMeta(BaseModel):
 
 class Patient(BaseModel):
     patient_id: int
+    # national_code and phone come back as a placeholder for non-owner roles,
+    # so both stay plain strings rather than a narrower type.
     national_code: str
     first_name: str
     last_name: str
     gender: str | None = None
     phone: str | None = None
-    birth_date: datetime | None = None
     registration_date: datetime | None = None
-    allergies: str | None = None
     insurance: str | None = None
 
 

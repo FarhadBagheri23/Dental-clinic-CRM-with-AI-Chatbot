@@ -1,17 +1,29 @@
 """ASGI entrypoint. Wiring only — no endpoints live here."""
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routers import api_router
+from app.core import throttle
 from app.core.config import settings
-from app.db.mongodb import close_db
+from app.db.mongodb import close_db, get_db
+
+log = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # The login throttle relies on a TTL index to expire its own records.
+    # Failure to create it must not stop the API booting — a database that is
+    # still starting up is the common case — but it has to be loud, because
+    # without the index lockouts would never expire.
+    try:
+        await throttle.ensure_indexes(get_db())
+    except Exception as e:
+        log.warning("could not create login-throttle indexes: %s", e)
     yield
     close_db()
 

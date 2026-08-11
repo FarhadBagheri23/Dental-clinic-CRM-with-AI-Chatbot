@@ -1,5 +1,13 @@
 name: dental-clinic
 
+# The full stack: database, one-shot seeder, BI API, BI panel, public site.
+#
+#   cp .env.example .env && edit it
+#   docker compose up -d --build
+#
+#   panel  -> http://localhost:8080   (login required)
+#   site   -> http://localhost:3000   (public)
+
 services:
   # ---------------------------------------------------------------- database
   mongo:
@@ -11,7 +19,7 @@ services:
       MONGO_INITDB_DATABASE: ${MONGO_DB:-dental_clinic}
     volumes:
       - mongo-data:/data/db
-    # Bound to localhost only — the CRM reaches Mongo over the internal
+    # Bound to localhost only — the API reaches Mongo over the internal
     # network, so this is for local tooling (Compass, mongosh) and must not
     # be published to 0.0.0.0 on a public VPS.
     ports:
@@ -39,15 +47,18 @@ services:
       DATA_DIR: /data
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      # The database account the API will use. Created here because the seeder
+      # is the only service holding root credentials.
+      API_DB_USERNAME: ${API_DB_USERNAME:-clinic_api}
+      API_DB_PASSWORD: ${API_DB_PASSWORD:?set API_DB_PASSWORD in .env}
     volumes:
       - ./data:/data:ro
     networks: [clinic]
 
-  # ------------------------------------------------------------- clinic site
-  web:
+  # ------------------------------------------------------------- BI API
+  api:
     build:
-      context: .
-      dockerfile: website/Dockerfile
+      context: ./backend
     restart: unless-stopped
     depends_on:
       mongo:
@@ -55,11 +66,46 @@ services:
       seed:
         condition: service_completed_successfully
     environment:
-      MONGO_URL: mongodb://${MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD}@mongo:27017/?authSource=admin
+      # The API authenticates as its own least-privilege user (created by the
+      # seeder with readWrite on this database only), not as Mongo root. It
+      # reads analytics and writes one collection, so a flaw in the API cannot
+      # drop the database or read `admin`. The seeder keeps root because it
+      # genuinely creates users and rebuilds collections.
+      MONGO_URL: mongodb://${API_DB_USERNAME:-clinic_api}:${API_DB_PASSWORD:?set API_DB_PASSWORD in .env}@mongo:27017/${MONGO_DB:-dental_clinic}?authSource=${MONGO_DB:-dental_clinic}
       MONGO_DB: ${MONGO_DB:-dental_clinic}
       SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env}
+      # nginx serves the panel from the same origin, so CORS never applies in
+      # production and the allow-list is deliberately empty.
+      CORS_ORIGINS: "[]"
+      # Session cookie is only sent over TLS once a certificate is in front.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    # Not published: only `web` talks to it, over the internal network.
+    expose:
+      - "8000"
+    networks: [clinic]
+
+  # --------------------------------------------------------- BI panel (SPA)
+  web:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
     ports:
-      - "${WEB_PORT:-3000}:3000"
+      - "${WEB_PORT:-8080}:8080"
+    networks: [clinic]
+
+  # ------------------------------------------------------- public clinic site
+  site:
+    build:
+      context: .
+      dockerfile: website/Dockerfile
+    restart: unless-stopped
+    # Static marketing pages rendered from clinic-data.json at build time —
+    # no database and no API, so it depends on nothing.
+    ports:
+      - "${SITE_PORT:-3000}:3000"
     networks: [clinic]
 
   # ---------------------------------------------- regenerate data (on demand)

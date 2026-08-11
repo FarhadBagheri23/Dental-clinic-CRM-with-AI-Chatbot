@@ -53,10 +53,14 @@ async def list_patients(db: AsyncIOMotorDatabase, q: str = "", page: int = 1) ->
         [
             {"$lookup": {"from": "insurance", "localField": "insurance_id",
                          "foreignField": "insurance_id", "as": "ins"}},
+            # `allergies` and `birth_date` were selected here but rendered by
+            # nothing. Allergies are health data and a birth date is a strong
+            # identifier, so the list stops shipping them rather than leaving
+            # them in a payload anyone can read from the network tab.
             {"$project": {
                 "_id": 0, "patient_id": 1, "national_code": 1, "first_name": 1,
-                "last_name": 1, "gender": 1, "phone": 1, "birth_date": 1,
-                "registration_date": 1, "allergies": 1,
+                "last_name": 1, "gender": 1, "phone": 1,
+                "registration_date": 1,
                 "insurance": {"$ifNull": [{"$first": "$ins.company_name"}, None]},
             }},
         ],

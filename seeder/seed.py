@@ -24,13 +24,16 @@ from datetime import datetime
 from pathlib import Path
 
 from pymongo import ASCENDING, MongoClient
-from pymongo.errors import ServerSelectionTimeoutError
+from pymongo.errors import OperationFailure, ServerSelectionTimeoutError
 
 MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
 MONGO_DB = os.environ.get("MONGO_DB", "dental_clinic")
 DATA_DIR = Path(os.environ.get("DATA_DIR", "/data"))
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
+# The database account the API runs as — not the root account the seeder uses.
+API_DB_USERNAME = os.environ.get("API_DB_USERNAME", "clinic_api")
+API_DB_PASSWORD = os.environ.get("API_DB_PASSWORD", "")
 
 # scrypt parameters. Node's crypto.scryptSync must be called with the same
 # values or verification silently fails — keep these two in sync with
@@ -117,6 +120,13 @@ SCHEMA = {
         "usage_id": _int, "consumable_id": _int, "session_id": _int,
         "quantity_used": _float, "usage_date": _dt,
     },
+    # Staffing, not furniture: a chair with nobody rostered on it is not
+    # capacity. The hours differ per chair (9, 9, 9, 7, 4, 4), so utilisation
+    # cannot be modelled as chairs x opening hours.
+    "clinic_capacity": {
+        "chair_number": _int, "start_hour": _int, "end_hour": _int,
+        "staffed_hours_per_day": _float,
+    },
 }
 
 # Indexes the CRM actually queries on — primary keys, foreign keys used for
@@ -144,11 +154,12 @@ INDEXES = {
     "consumables": [("consumable_id", True)],
     "consumable_usage": [("usage_id", True), ("consumable_id", False),
                          ("session_id", False)],
+    "clinic_capacity": [("chair_number", True)],
 }
 
 
 def hash_password(password):
-    """scrypt hash in a format website/lib/auth.js can verify."""
+    """scrypt hash in the format backend/app/core/security.py verifies."""
     salt = secrets.token_bytes(16)
     dk = hashlib.scrypt(password.encode(), salt=salt, n=SCRYPT_N, r=SCRYPT_R,
                         p=SCRYPT_P, dklen=SCRYPT_DKLEN, maxmem=64 * 1024 * 1024)
@@ -222,6 +233,35 @@ def seed_admin(db):
         "created_at": datetime.utcnow(),
     })
     db.users.create_index([("username", ASCENDING)], unique=True)
+
+
+def seed_api_account(db):
+    """Create the least-privilege database user the API authenticates as.
+
+    The seeder is the only service holding Mongo root credentials, so it is
+    the only place that can create this. The API then connects with
+    `readWrite` scoped to this one database instead of as root — it must write
+    (the login-throttle collection), but it has no business dropping the
+    database or reading `admin`.
+
+    Idempotent: `updateUser` on re-seed keeps a rotated password in .env
+    working instead of failing on an account that already exists.
+    """
+    if not API_DB_PASSWORD:
+        raise SystemExit(
+            "API_DB_PASSWORD is not set — refusing to fall back to the root "
+            "account for the API. Set it in .env")
+
+    roles = [{"role": "readWrite", "db": MONGO_DB}]
+    try:
+        db.command("createUser", API_DB_USERNAME, pwd=API_DB_PASSWORD, roles=roles)
+        print(f"  {'db user':<22} {'created':>6}  ({API_DB_USERNAME}, readWrite on {MONGO_DB})")
+    except OperationFailure as e:
+        # 51003 = user already exists. Anything else is a real problem.
+        if e.code != 51003:
+            raise
+        db.command("updateUser", API_DB_USERNAME, pwd=API_DB_PASSWORD, roles=roles)
+        print(f"  {'db user':<22} {'updated':>6}  ({API_DB_USERNAME}, readWrite on {MONGO_DB})")
 
 
 def main():

@@ -8,6 +8,7 @@ existing account is locked out.
 import hashlib
 import secrets
 import time
+from datetime import datetime
 
 import jwt
 import pytest
@@ -93,9 +94,50 @@ class FakeUsers:
         return self._doc if query["username"] == self._doc["username"] else None
 
 
+class FakeCollection:
+    """Enough of a Mongo collection for the login throttle: docs keyed by `key`.
+
+    Only the operators throttle.py actually issues are implemented — $inc and
+    $set with upsert. A fuller fake would be inventing behaviour nothing calls.
+    """
+
+    def __init__(self):
+        self.docs = {}
+
+    async def find_one(self, query):
+        doc = self.docs.get(query["key"])
+        if doc is None:
+            return None
+        # Mongo stores datetimes as UTC and hands them back *naive*. Copying
+        # that here is the whole point of the fake: with tz-aware values the
+        # throttle passed its tests while never engaging on a UTC+03:30 host,
+        # because a naive UTC value is read as local time.
+        return {
+            k: (v.replace(tzinfo=None) if isinstance(v, datetime) else v)
+            for k, v in doc.items()
+        }
+
+    async def update_one(self, query, update, upsert=False):
+        key = query["key"]
+        doc = self.docs.get(key) or {"key": key, "failures": 0}
+        doc["failures"] = doc["failures"] + update.get("$inc", {}).get("failures", 0)
+        doc.update(update.get("$set", {}))
+        self.docs[key] = doc
+
+    async def delete_one(self, query):
+        self.docs.pop(query["key"], None)
+
+    async def create_index(self, *args, **kwargs):
+        return None
+
+
 class FakeDB:
     def __init__(self, doc):
         self.users = FakeUsers(doc)
+        self._collections = {}
+
+    def __getitem__(self, name):
+        return self._collections.setdefault(name, FakeCollection())
 
 
 @pytest.fixture
@@ -106,7 +148,11 @@ def client():
         "display_name": "مدیر سیستم",
         "role": "مدیر",
     }
-    app.dependency_overrides[get_db] = lambda: FakeDB(doc)
+    # One instance for the whole test, not one per request: the throttle keeps
+    # its counters in the database, so a fresh fake per call would reset them
+    # and quietly make every lockout assertion pass for the wrong reason.
+    db = FakeDB(doc)
+    app.dependency_overrides[get_db] = lambda: db
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
@@ -170,10 +216,74 @@ def test_persian_digit_is_not_treated_as_its_ascii_lookalike(client):
 
 
 def test_ascii_symbols_are_still_allowed_in_passwords(client):
-    """The rule bans non-English, not punctuation — don't weaken passwords."""
-    for pw in ["p@ssw0rd!", "~`{}|:<>?", "A" * 256]:
+    """The rule bans non-English, not punctuation — don't weaken passwords.
+
+    Stays under MAX_FAILURES so the throttle does not turn these into 429s;
+    what is being asserted is that they reach auth at all.
+    """
+    for pw in ["p@ssw0rd!", "~`{}|:<>?"]:
         r = client.post("/api/auth/login", json={"username": "admin", "password": pw})
         assert r.status_code == 401, f"{pw!r} should reach auth, not be rejected as invalid"
+
+
+# ------------------------------------------------------ brute-force throttle
+
+def test_repeated_failures_lock_the_account_out(client):
+    """Unlimited guesses against one account was the whole panel.
+
+    scrypt's ~100ms is not a brake: it runs in a threadpool, so attempts do
+    not even serialise.
+    """
+    from app.core.throttle import MAX_FAILURES
+
+    for attempt in range(MAX_FAILURES):
+        r = client.post("/api/auth/login", json={"username": "admin", "password": "wrong"})
+        assert r.status_code == 401, f"attempt {attempt} should still be answered"
+
+    blocked = client.post("/api/auth/login", json={"username": "admin", "password": "wrong"})
+    assert blocked.status_code == 429
+    assert int(blocked.headers["retry-after"]) > 0
+
+
+def test_lockout_applies_even_to_the_correct_password(client):
+    """Otherwise the throttle is bypassed by the one guess that matters."""
+    from app.core.throttle import MAX_FAILURES
+
+    for _ in range(MAX_FAILURES):
+        client.post("/api/auth/login", json={"username": "admin", "password": "wrong"})
+
+    r = client.post("/api/auth/login", json={"username": "admin", "password": PASSWORD})
+    assert r.status_code == 429
+
+
+def test_successful_login_clears_the_failure_count(client):
+    """A user who mistypes twice and then succeeds must not stay one typo
+    away from a lockout for the next fifteen minutes."""
+    from app.core.throttle import MAX_FAILURES
+
+    for _ in range(MAX_FAILURES - 1):
+        client.post("/api/auth/login", json={"username": "admin", "password": "wrong"})
+
+    assert client.post(
+        "/api/auth/login", json={"username": "admin", "password": PASSWORD}
+    ).status_code == 200
+
+    # Budget is back: another wrong guess is a 401, not a 429.
+    assert client.post(
+        "/api/auth/login", json={"username": "admin", "password": "wrong"}
+    ).status_code == 401
+
+
+def test_lockout_is_per_username_not_global(client):
+    """One attacker hammering 'ghost' must not lock the real admin out."""
+    from app.core.throttle import MAX_FAILURES
+
+    for _ in range(MAX_FAILURES + 1):
+        client.post("/api/auth/login", json={"username": "ghost", "password": "wrong"})
+
+    assert client.post(
+        "/api/auth/login", json={"username": "admin", "password": PASSWORD}
+    ).status_code == 200
 
 
 def test_logout_clears_the_session(client):
