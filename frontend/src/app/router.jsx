@@ -3,6 +3,8 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 import { PanelLayout } from "@/app/layouts/PanelLayout";
 import { ProtectedRoute } from "@/features/auth/routes/ProtectedRoute";
 import { AppointmentsPage } from "@/pages/AppointmentsPage";
+import { AssistantPage } from "@/pages/AssistantPage";
+import { ClinicalPage } from "@/pages/ClinicalPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { DentistsPage } from "@/pages/DentistsPage";
 import { FinancePage } from "@/pages/FinancePage";
@@ -11,6 +13,7 @@ import { InvoicesPage } from "@/pages/InvoicesPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { OperationsPage } from "@/pages/OperationsPage";
 import { PatientsPage } from "@/pages/PatientsPage";
+import { ProfitabilityPage } from "@/pages/ProfitabilityPage";
 import { RevenuePage } from "@/pages/RevenuePage";
 
 export const router = createBrowserRouter([
@@ -27,11 +30,14 @@ export const router = createBrowserRouter([
           { path: "/revenue", element: <RevenuePage /> },
           { path: "/dentists", element: <DentistsPage /> },
           { path: "/operations", element: <OperationsPage /> },
+          { path: "/clinical", element: <ClinicalPage /> },
           { path: "/finance", element: <FinancePage /> },
+          { path: "/profitability", element: <ProfitabilityPage /> },
           { path: "/patients", element: <PatientsPage /> },
           { path: "/appointments", element: <AppointmentsPage /> },
           { path: "/invoices", element: <InvoicesPage /> },
           { path: "/inventory", element: <InventoryPage /> },
+          { path: "/assistant", element: <AssistantPage /> },
         ],
       },
     ],

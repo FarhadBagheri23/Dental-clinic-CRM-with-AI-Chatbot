@@ -3,25 +3,18 @@ import { PageHeader } from "@/app/layouts/PanelLayout";
 import { analyticsApi } from "@/features/analytics/api/analyticsApi";
 import { dashboardApi } from "@/features/dashboard/api/dashboardApi";
 import { FilterBar } from "@/features/analytics/components/FilterBar";
+import { FilterNote } from "@/features/analytics/components/FilterNote";
 import { useApiQuery } from "@/shared/hooks/useApiQuery";
 import { num, percent, toman, tomanShort } from "@/shared/lib/format";
 import { Card, StatCard } from "@/shared/ui/Card";
 import { BarChart } from "@/shared/ui/charts/BarChart";
 import { Donut } from "@/shared/ui/charts/Donut";
 import { StackedBar } from "@/shared/ui/charts/StackedBar";
-import { CardSkeleton, EmptyState, ErrorState } from "@/shared/ui/Feedback";
+import { Panel } from "@/shared/ui/Feedback";
 import { Insight } from "@/shared/ui/Insight";
 import { Table, Td, Tr } from "@/shared/ui/Table";
 
 const METHOD_COLORS = ["#1f757b", "#4fb0b3", "#d9a441", "#83cfcf"];
-
-function Panel({ query, children, rows = 5 }) {
-  if (query.loading) return <CardSkeleton rows={rows} />;
-  if (query.error) return <ErrorState message={query.error} />;
-  const empty = Array.isArray(query.data) ? !query.data.length : !query.data;
-  if (empty) return <EmptyState title="داده‌ای در این بازه نیست." hint="فیلترها را تغییر دهید." />;
-  return children(query.data);
-}
 
 export function FinancePage() {
   const { queryString } = useFilters();
@@ -31,7 +24,11 @@ export function FinancePage() {
   const stock = useApiQuery((s) => dashboardApi.inventory(s));
 
   const d = ar.data;
-  const collectionRate = d?.patient_share ? (d.collected / d.patient_share) * 100 : 0;
+  // Comes from the server rather than being recomputed here. Dividing cash
+  // received in the window by what was billed in the window mixes cohorts —
+  // payments settle older invoices, so a filtered month reported rates above
+  // 100%. The server matches payments to the window's own invoices.
+  const collectionRate = d?.collection_rate ?? 0;
   const totalCost = (cost.data ?? []).reduce((s, c) => s + c.cost, 0);
   const totalRev = (cost.data ?? []).reduce((s, c) => s + c.revenue, 0);
 
@@ -43,7 +40,7 @@ export function FinancePage() {
       <section className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="کل صورتحساب" value={tomanShort(d?.billed ?? 0)} hint="مبلغ ناخالص فاکتورها" />
         <StatCard label="سهم بیمه" value={tomanShort(d?.insurance ?? 0)} tone="info" hint="کسرشده از فاکتور" />
-        <StatCard label="وصول‌شده" value={tomanShort(d?.collected ?? 0)} tone="positive" hint={`نرخ وصول ${percent(collectionRate.toFixed(1))}`} />
+        <StatCard label="وصول‌شده (نقد در بازه)" value={tomanShort(d?.collected ?? 0)} tone="positive" hint={`نرخ وصول فاکتورهای همین بازه ${percent(collectionRate)}`} />
         <StatCard label="مطالبات معوق" value={tomanShort(d?.outstanding ?? 0)} tone="negative" hint="سهم بیمار پرداخت‌نشده" />
       </section>
 
@@ -55,10 +52,14 @@ export function FinancePage() {
                 total={data.billed}
                 segments={[
                   { label: "سهم بیمه", value: data.insurance, color: "#83cfcf" },
-                  { label: "وصول‌شده از بیمار", value: data.collected, color: "#1f757b" },
+                  // Cohort figure, not cash-in-period: these three must add up
+                  // to the billed total, and cash from older invoices does not
+                  // belong inside this window's bar.
+                  { label: "وصول‌شده از بیمار", value: data.collected_on_window_invoices, color: "#1f757b" },
                   { label: "معوق", value: data.outstanding, color: "#e11d48" },
                 ]}
               />
+              <FilterNote endpoint="receivables" />
               <Insight tone="caution">
                 {percent((100 - collectionRate).toFixed(1))} از سهم بیمار وصول نشده است
                 ({toman(data.outstanding)}). این رقم سرمایه در گردشی است که کلینیک
@@ -89,6 +90,7 @@ export function FinancePage() {
                     </Tr>
                   ))}
                 </Table>
+                <FilterNote endpoint="payment-methods" />
               </>
             )}
           </Panel>

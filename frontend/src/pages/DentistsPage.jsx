@@ -24,6 +24,10 @@ export function DentistsPage() {
   const leastReliable = [...data].sort(
     (a, b) => b.cancel_rate + b.noshow_rate - (a.cancel_rate + a.noshow_rate),
   )[0];
+  // Productivity vs. volume. The top biller is often just the one who was
+  // rostered the most hours; per chair-hour is what survives an uneven roster.
+  const byHour = [...data].sort((a, b) => b.revenue_per_hour - a.revenue_per_hour);
+  const hourInversion = data[0] && byHour[0] && data[0].name !== byHour[0].name;
 
   if (q.loading) {
     return (
@@ -73,7 +77,7 @@ export function DentistsPage() {
       </div>
 
       <Card title="کمیسیون و حاشیه سود کلینیک" className="mt-5" bodyClassName="">
-        <Table head={["پزشک", "تخصص", "جلسات", "بیماران", "درآمد", "نرخ کمیسیون", "کمیسیون", "سهم کلینیک", "لغو", "غیبت"]}>
+        <Table head={["پزشک", "تخصص", "جلسات", "بیماران", "درآمد", "درآمد هر ساعت یونیت", "نرخ کمیسیون", "کمیسیون", "سهم کلینیک", "لغو", "غیبت"]}>
           {data.map((d) => (
             <Tr key={d.dentist_id}>
               <Td bold>{d.name}</Td>
@@ -81,6 +85,9 @@ export function DentistsPage() {
               <Td>{num(d.sessions)}</Td>
               <Td>{num(d.patients)}</Td>
               <Td bold>{tomanShort(d.revenue)}</Td>
+              {/* The comparison that survives an uneven roster: gross revenue
+                  rewards whoever had more chair time, this does not. */}
+              <Td className="text-brand-700">{tomanShort(d.revenue_per_hour)}</Td>
               <Td className="text-ink-500">{percent(d.commission_rate)}</Td>
               <Td className="text-accent-700">{tomanShort(d.commission)}</Td>
               <Td bold className="text-emerald-700">{tomanShort(d.margin)}</Td>
@@ -103,6 +110,17 @@ export function DentistsPage() {
               خالص برای کلینیک را {byMargin[0].name} می‌سازد
               ({tomanShort(byMargin[0].margin)}) — چون نرخ کمیسیون از {percent(data[0].commission_rate)} تا{" "}
               {percent(byMargin[0].commission_rate)} تفاوت دارد. رتبه‌بندی بر پایه درآمد ناخالص گمراه‌کننده است.
+            </Insight>
+          )}
+
+          {hourInversion && (
+            <Insight tone="warn">
+              بر پایه درآمد، {data[0].name} در صدر است؛ اما بیشترین درآمد به ازای
+              هر ساعت یونیت را {byHour[0].name} می‌سازد
+              ({tomanShort(byHour[0].revenue_per_hour)} در ساعت). درآمد ناخالص
+              پاداش کسی است که ساعت بیشتری روی یونیت داشته، نه لزوماً کسی که از
+              زمانش بیشترین استفاده را کرده — برای تقسیم شیفت‌ها، ستون «درآمد هر
+              ساعت یونیت» معیار درست‌تری است.
             </Insight>
           )}
 

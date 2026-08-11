@@ -1,10 +1,20 @@
 const fa = new Intl.NumberFormat("fa-IR");
 const faDecimal = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 1 });
+const faPrecise = new Intl.NumberFormat("fa-IR", { maximumFractionDigits: 2 });
 
 /** Persian digits with thousands separators. */
 export const num = (n) => fa.format(Math.round(Number(n) || 0));
 
-export const percent = (n) => `${num(n)}٪`;
+/** A rate, rounded — except that a non-zero rate never renders as ۰٪.
+ *
+ *  A 0.37% discount is genuinely small, but printing it as "۰٪" next to the
+ *  24 million tomans it represents reads as a broken number, not a small one.
+ */
+export function percent(n) {
+  const v = Number(n) || 0;
+  const text = v !== 0 && Math.abs(v) < 1 ? faPrecise.format(v) : num(v);
+  return `${text}٪`;
+}
 
 const SCALES = [
   [1e9, "میلیارد"],

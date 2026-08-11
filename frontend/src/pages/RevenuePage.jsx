@@ -6,16 +6,9 @@ import { useApiQuery } from "@/shared/hooks/useApiQuery";
 import { num, tomanShort } from "@/shared/lib/format";
 import { Card } from "@/shared/ui/Card";
 import { BarChart } from "@/shared/ui/charts/BarChart";
-import { CardSkeleton, EmptyState, ErrorState } from "@/shared/ui/Feedback";
+import { Panel } from "@/shared/ui/Feedback";
 import { Insight } from "@/shared/ui/Insight";
 import { Table, Td, Tr } from "@/shared/ui/Table";
-
-function Panel({ query, children, rows = 5 }) {
-  if (query.loading) return <CardSkeleton rows={rows} />;
-  if (query.error) return <ErrorState message={query.error} />;
-  if (!query.data?.length) return <EmptyState title="داده‌ای در این بازه نیست." hint="فیلترها را تغییر دهید." />;
-  return children(query.data);
-}
 
 export function RevenuePage() {
   const { queryString } = useFilters();

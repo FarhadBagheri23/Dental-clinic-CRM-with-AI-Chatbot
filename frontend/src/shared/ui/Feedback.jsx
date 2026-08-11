@@ -36,6 +36,26 @@ export function EmptyState({ title, hint }) {
   );
 }
 
+/** Renders the loading / error / empty / loaded states of one `useApiQuery`.
+ *
+ *  Was copy-pasted into five pages in three subtly different variants: one
+ *  tested `!data`, one `!data?.length`, and one handled both. The third is
+ *  the only correct one for every caller — the array test alone treated a
+ *  populated object payload as empty — so it is the one kept here.
+ *
+ *  `children` is a function so the data is unwrapped only once it is known
+ *  to exist, which is what lets callers drop their `?.` chains.
+ */
+export function Panel({ query, children, rows = 5 }) {
+  if (query.loading) return <CardSkeleton rows={rows} />;
+  if (query.error) return <ErrorState message={query.error} />;
+
+  const empty = Array.isArray(query.data) ? !query.data.length : !query.data;
+  if (empty) return <EmptyState title="داده‌ای در این بازه نیست." hint="فیلترها را تغییر دهید." />;
+
+  return children(query.data);
+}
+
 export function Pagination({ meta, onChange }) {
   if (!meta || meta.pages <= 1) return null;
 

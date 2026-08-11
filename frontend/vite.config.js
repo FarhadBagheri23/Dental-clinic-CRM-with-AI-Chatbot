@@ -10,7 +10,9 @@ export default defineConfig({
     alias: { "@": path.resolve(import.meta.dirname, "src") },
   },
   server: {
-    port: 5173,
+    // PORT lets a second dev server start alongside a running one instead of
+    // failing on a busy 5173.
+    port: Number(process.env.PORT) || 5173,
     // Proxying keeps the browser on one origin in dev, so the session cookie
     // is same-origin and CORS never enters the picture — the same shape as
     // production, where nginx does the proxying.

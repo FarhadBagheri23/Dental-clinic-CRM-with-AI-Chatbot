@@ -14,4 +14,10 @@ export const analyticsApi = {
   paymentMethods: (qs, signal) => get("payment-methods", qs, signal),
   consumableCost: (qs, signal) => get("consumable-cost", qs, signal),
   patients: (qs, signal) => get("patients", qs, signal),
+  kpis: (qs, signal) => get("kpis", qs, signal),
+  treatmentPlans: (qs, signal) => get("treatment-plans", qs, signal),
+  recall: (qs, signal) => get("recall", qs, signal),
+  lostSlots: (qs, signal) => get("lost-slots", qs, signal),
+  aging: (qs, signal) => get("aging", qs, signal),
+  profitability: (qs, signal) => get("profitability", qs, signal),
 };
