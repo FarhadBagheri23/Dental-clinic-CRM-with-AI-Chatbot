@@ -9,6 +9,12 @@ dependencies = [
     "motor>=3.6",
     "pydantic-settings>=2.6",
     "pyjwt>=2.10",
+    # Assistant. `openai` is the client for the AvalAI gateway, which is
+    # OpenAI-compatible; `jdatetime` does the Jalali arithmetic models get
+    # wrong. Retrieval is BM25 in-process — no vector store, no embedding
+    # client, no numpy.
+    "openai>=1.60",
+    "jdatetime>=5.0",
 ]
 
 [project.optional-dependencies]
